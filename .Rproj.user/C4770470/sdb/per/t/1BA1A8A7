@@ -1,0 +1,17 @@
+{
+    "contents" : "WYNIKI\n=======\n\n##Wczytywanie danych\n\nWczytuję dane z pliku do data.frame 'data_raw':\n```{r}\ndata_raw <- read.table(\"dane.csv\", header = TRUE, sep = \";\")\n```\nSelekcjonuję kolumny:\n```{r}\ndata <- data_raw[,c(\"grupa\",\"kto\",\"ABA3\",\"nr_ciagu\")]\n```\nDodaję kolumnę do filtrowania braków danych:\n```{r}\ndata$ok <- complete.cases(data)\n```\nDzielę dane na grupy:\n```{r}\ndata_grupy <- split(data,f = data$grupa)\n```\n##Wstępny opis danych\n\n###Liczebności\nAgreguję dane aby otrzymać liczebności w ABA i ABC oraz wypowiedzi poszczególnych osób w poszczególnych grupach.:\n\n```{r}\no <- lapply(1:length(data_grupy), function(i){\n        data_i <- data_grupy[[i]][data_grupy[[i]]$ok,]\n        a <- sum(data_i$ABA3 == \"1\")\n        b <- sum(data_i$ABA3 == \"0\")\n        c <- sum(data_i$kto == \"1\")\n        d <- sum(data_i$kto == \"2\")\n        e <- sum(data_i$kto == \"3\")\n        f <- sum(data_i$kto == \"4\")\n        c(a,b,c,d,e,f)\n        })\naggr1 <- as.data.frame(do.call(rbind,o))\ncolnames(aggr1) <- c(\"ABA\",\"ABC\", \"o1\", \"o2\", \"o3\", \"o4\")\n```\n\nWykresy liczebności wypowiedzi ABA i ABC:\n\n```{r results='hide'}\npar(mfrow = c(2,4))\n\nmax_freq <- max(c(aggr1$ABA, aggr1$ABC))\n\nlapply(1:nrow(aggr1), function(i){\n        n <- aggr1[i,]$ABA + aggr1[i,]$ABC\n        barplot(c(aggr1[i,]$ABA, aggr1[i,]$ABC)\n                ,names.arg = colnames(aggr1)[1:2]\n                ,main = paste(\"grupa\",i,\"\\nn =\",n)\n                ,ylim = c(0,max_freq)\n                ,col = c(\"red\",\"green\"))       \n        })\n```\n\nWykresy liczebności wypowiedzi poszczególnych osób:\n\n```{r results='hide'}\npar(mfrow = c(2,4))\n\nmax_freq <- max(c(aggr1$o1, aggr1$o2, aggr1$o3, aggr1$o4))\n\nlapply(1:nrow(aggr1), function(i){\n        n <- aggr1[i,]$o1 + aggr1[i,]$o2 + aggr1[i,]$o3 + aggr1[i,]$o4\n        barplot(c(aggr1[i,]$o1, aggr1[i,]$o2, aggr1[i,]$o3, aggr1[i,]$o4)\n                ,names.arg = colnames(aggr1)[3:6]\n                ,main = paste(\"grupa\",i,\"\\nn =\",n)\n                ,ylim = c(0,max_freq)\n                ,col = c(\"red\",\"yellow\",\"green\",\"blue\"))       \n        })\n```\n\n###Skumulowane przebiegi czasowe\nDo Danych dla każdej grupy dołaczam kolumny z kumulatywnymi sumami ABA i ABC. Dane przdstawiam na wykresie: \n\n```{r}\npar(mfrow = c(2,4))\no <- lapply(1:length(data_grupy), function(i){\n    data_i <- data_grupy[[i]][data_grupy[[i]]$ok,] \n    data_i$cumABA <- cumsum(data_i$ABA3)\n    data_i$cumABC <- cumsum(abs(data_i$ABA3-1))\n    maxY <- max(c(data_i$cumABA,data_i$cumABC))\n    plot(data_i$cumABA\n         ,type = \"l\"\n         ,ylim = c(0,maxY)\n         ,main = paste(\"grupa\",i)\n         ,xlab = \"time\"\n         ,ylab = \"cumulative sum\"\n         ,col = \"red\")\n    lines(data_i$cumABC\n          ,col = \"green\")\n    legend(\"topleft\"\n           ,lty = \"solid\"\n           ,bty = \"n\"\n           ,col = c(\"red\", \"green\")\n           ,legend = c(\"ABA\", \"ABC\"))\n})\n```",
+    "created" : 1408012637364.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3938516335",
+    "id" : "1BA1A8A7",
+    "lastKnownWriteTime" : 1408024846,
+    "path" : "~/Rozne/R/DoktoratKaro/wyniki.Rmd",
+    "project_path" : "wyniki.Rmd",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}
