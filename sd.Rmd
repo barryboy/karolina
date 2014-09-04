@@ -1,0 +1,64 @@
+---
+output: html_document
+---
+Participants' turn taking SD
+============================
+
+```{r echo=FALSE, results='hide'}
+library(zoo)
+window<-50
+f <- rep(1/window, window)
+
+data_raw <- read.table("dane.csv", header = TRUE, sep = ";")
+data <- data_raw[,c("grupa","kto","ABA3")]
+data$ok <- complete.cases(data)
+data_grupy <- split(data,f = data$grupa)
+lapply(names(data_grupy), function(x) {data_grupy[[x]]$kto_lag1 <<- as.character(lag(zoo(data_grupy[[x]]$kto), -1, na.pad = T))})
+data <- data.frame(do.call(rbind,data_grupy))
+row.names(data) <- NULL
+data$para<-paste0(as.character(data$kto),as.character(data$kto_lag1))
+data<-data[data$ok,]
+data$ok<-NULL
+for(i in 1:nrow(data)){
+        data$para_sym[i]<-ifelse(data$kto[i]>data$kto_lag1[i]
+                                 ,paste0(data$kto_lag1[i],data$kto[i])
+                                 ,paste0(data$kto[i],data$kto_lag1[i])
+                                 )}
+
+
+data$ps12 <- as.numeric(data$para_sym == "12")
+data$ps13 <- as.numeric(data$para_sym == "13")
+data$ps14 <- as.numeric(data$para_sym == "14")
+data$ps23 <- as.numeric(data$para_sym == "23")
+data$ps24 <- as.numeric(data$para_sym == "24")
+data$ps34 <- as.numeric(data$para_sym == "34")
+
+```
+
+#okno = `r window`
+
+```{r  echo=FALSE, results='hide'}
+colors <- rainbow(6)
+lapply(1:16,function(g){
+        current <- data[data$grupa==g,]
+        
+        current$x<-1:nrow(current)
+        current$ps12_lag <- filter(current$ps12, f, sides=1)
+        current$ps13_lag <- filter(current$ps13, f, sides=1)
+        current$ps14_lag <- filter(current$ps14, f, sides=1)
+        current$ps23_lag <- filter(current$ps23, f, sides=1)
+        current$ps24_lag <- filter(current$ps24, f, sides=1)
+        current$ps34_lag <- filter(current$ps34, f, sides=1)
+        current$sd <- apply(as.matrix(current[,14:19]),1,sd)
+        
+        df<-data.frame(current$x,current$sd)
+        colnames(df)<-c("x","sd")
+        df<-df[complete.cases(df),]
+        df$fit_loess<-predict(loess(df$sd~df$x))
+        df$fit_lm<-fitted(lm(df$sd~df$x))
+        plot(df$sd~df$x, type="l", lwd=2, main=c("grupa",g), xlab="time", ylab="SD", ylim=c(0,0.3))
+        head(df)
+        lines(df$x, df$fit_loess, col="red", lty="dotted", lwd=2)
+        lines(df$x, df$fit_lm, col="green", lwd=2)
+        grid()
+        })

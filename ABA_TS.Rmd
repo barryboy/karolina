@@ -1,0 +1,23 @@
+ANALIZA PRZEBIEGÓW CZASOWYCH ABA
+================================
+
+##WCZYTANIE DANYCH
+```{r wczytanie_danych}
+data_raw <- read.table("dane.csv", header = TRUE, sep = ";")
+data <- data_raw[,c("grupa","ABA3","nr_ciagu")]
+data <- data[complete.cases(data)&data$ABA3 == 1,]
+data$nr_ciagu <- as.numeric(as.character(data$nr_ciagu))
+data$grupa <- factor(data$grupa)
+data <- aggregate(ABA3~grupa+nr_ciagu, data = data,sum)
+data$t <- ave(data$nr_ciagu, data$grupa, FUN=seq_along)
+data$nr_ciagu <- NULL
+```
+
+##WYKRESY PRZEBIEGÓW CZASOWYCH
+```{r wykresy_przebiegow}
+library(lattice)
+#data$grupa <- as.numeric(data$grupa)
+#head(data[data$grupa == 1:8,])
+with(data[data$grupa %in% 1:8,],xyplot(ABA3~t|grupa,type="l"))
+with(data[data$grupa %in% 9:16,],xyplot(ABA3~t|grupa,type="l"))
+```

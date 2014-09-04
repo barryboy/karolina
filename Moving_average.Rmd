@@ -1,0 +1,43 @@
+---
+output: pdf_document
+---
+ŚREDNIA KROCZĄCA WYSTĄPIEŃ - OSOBY
+==================================
+
+```{r echo=FALSE, results='hide'}
+data_raw <- read.table("dane.csv", header = TRUE, sep = ";")
+data <- data_raw[,c("grupa","kto","ABA3","nr_ciagu")]
+data <- data[complete.cases(data),]
+window<-25
+f <- rep(1/window, window)
+
+data$o1 <- as.integer(data$kto == 1)
+data$o2 <- as.integer(data$kto == 2)
+data$o3 <- as.integer(data$kto == 3)
+data$o4 <- as.integer(data$kto == 4)
+```
+
+#okno = `r window`
+
+```{r  echo=FALSE, results='hide'}
+colors <- rainbow(4)
+lapply(1:16,function(g){
+        current <- data[data$grupa==g,]
+        
+        x<-1:nrow(current)
+        current$o1_lag <- filter(current$o1, f, sides=1)
+        current$o2_lag <- filter(current$o2, f, sides=1)
+        current$o3_lag <- filter(current$o3, f, sides=1)
+        current$o4_lag <- filter(current$o4, f, sides=1)
+        plot(x,current$o1_lag,type='l',col=colors[1], xlab="time", ylim=c(0,0.5),main=paste("grupa",g))
+        grid()
+        legend("topleft",legend=c("o1","o2","o3","o4"), fill=colors )
+        lines(x,current$o2_lag, col=colors[2])
+        lines(x,current$o3_lag, col=colors[3])
+        lines(x,current$o4_lag, col=colors[4])
+
+        })
+
+
+
+```

@@ -1,0 +1,40 @@
+---
+output: pdf_document
+---
+GĘSTOŚĆ WYSTĘPIEŃ
+=================
+
+```{r echo=FALSE, results='hide'}
+data_raw <- read.table("dane.csv", header = TRUE, sep = ";")
+data <- data_raw[,c("grupa","kto","ABA3","nr_ciagu")]
+data <- data[complete.cases(data),]
+
+data$o1 <- as.integer(data$kto == 1)
+data$o2 <- as.integer(data$kto == 2)
+data$o3 <- as.integer(data$kto == 3)
+data$o4 <- as.integer(data$kto == 4)
+
+window <- 4
+
+data$n <- as.integer(ave(row.names(data), data$grupa, FUN=seq_along))
+data$window <- as.integer(((data$n - 1) %/% window) + 1)
+
+
+aggr <- with(data, aggregate(cbind(o1,o2,o3,o4)~grupa+window, data=data, sum))
+aggr <- aggr[order(aggr$grupa),]
+
+colors <- rainbow(4)
+lapply(1:16, function(x) {
+        m<-as.matrix(aggr[aggr$grupa==x, c(-1, -2)])
+        rownames(m)<-aggr[aggr$grupa==x, 2]
+        barplot(t(m)
+                ,col=colors
+                ,main=paste("grupa", x)
+                ,xlab="interwał"
+                ,ylab="liczba wypowiedzi"
+                ,space=0)
+        
+        }
+       )
+```
+

@@ -1,0 +1,77 @@
+---
+output: pdf_document
+---
+ŚREDNIA KROCZĄCA WYSTĄPIEŃ - PARY
+==================================
+
+```{r echo=FALSE, results='hide'}
+library(zoo)
+window<-50
+f <- rep(1/window, window)
+
+data_raw <- read.table("dane.csv", header = TRUE, sep = ";")
+data <- data_raw[,c("grupa","kto","ABA3")]
+data$ok <- complete.cases(data)
+data_grupy <- split(data,f = data$grupa)
+lapply(names(data_grupy), function(x) {data_grupy[[x]]$kto_lag1 <<- as.character(lag(zoo(data_grupy[[x]]$kto), -1, na.pad = T))})
+data <- data.frame(do.call(rbind,data_grupy))
+row.names(data) <- NULL
+data$para<-paste0(as.character(data$kto),as.character(data$kto_lag1))
+data<-data[data$ok,]
+data$ok<-NULL
+for(i in 1:nrow(data)){
+        data$para_sym[i]<-ifelse(data$kto[i]>data$kto_lag1[i]
+                                 ,paste0(data$kto_lag1[i],data$kto[i])
+                                 ,paste0(data$kto[i],data$kto_lag1[i])
+        )}
+
+data$p12 <- as.numeric(data$para == "12")
+data$p13 <- as.numeric(data$para == "13")
+data$p14 <- as.numeric(data$para == "14")
+data$p21 <- as.numeric(data$para == "21")
+data$p23 <- as.numeric(data$para == "23")
+data$p24 <- as.numeric(data$para == "24")
+data$p31 <- as.numeric(data$para == "31")
+data$p32 <- as.numeric(data$para == "32")
+data$p34 <- as.numeric(data$para == "34")
+data$p41 <- as.numeric(data$para == "41")
+data$p42 <- as.numeric(data$para == "42")
+data$p43 <- as.numeric(data$para == "43")
+
+data$ps12 <- as.numeric(data$para_sym == "12")
+data$ps13 <- as.numeric(data$para_sym == "13")
+data$ps14 <- as.numeric(data$para_sym == "14")
+data$ps23 <- as.numeric(data$para_sym == "23")
+data$ps24 <- as.numeric(data$para_sym == "24")
+data$ps34 <- as.numeric(data$para_sym == "34")
+
+```
+
+#okno = `r window`
+
+```{r  echo=FALSE, results='hide'}
+colors <- rainbow(6)
+lapply(1:16,function(g){
+        current <- data[data$grupa==g,]
+        
+        x<-1:nrow(current)
+        current$ps12_lag <- filter(current$ps12, f, sides=1)
+        current$ps13_lag <- filter(current$ps13, f, sides=1)
+        current$ps14_lag <- filter(current$ps14, f, sides=1)
+        current$ps23_lag <- filter(current$ps23, f, sides=1)
+        current$ps24_lag <- filter(current$ps24, f, sides=1)
+        current$ps34_lag <- filter(current$ps34, f, sides=1)
+        plot(x,current$ps12_lag,type='l',col=colors[1], xlab="time", ylab="average ratio", ylim=c(0,1),main=paste("grupa",g))
+        grid()
+        legend("topleft",legend=c("1-2","1-3","1-4","2-3","2-4","3-4"), fill=colors )
+        lines(x,current$ps13_lag, col=colors[2])
+        lines(x,current$ps14_lag, col=colors[3])
+        lines(x,current$ps23_lag, col=colors[4])
+        lines(x,current$ps24_lag, col=colors[5])
+        lines(x,current$ps34_lag, col=colors[6])
+
+        })
+
+
+
+```

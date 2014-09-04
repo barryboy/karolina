@@ -1,0 +1,112 @@
+WYKRESY PAR
+===========
+
+```{r echo=FALSE,results='hide'}
+library(zoo)
+data_raw <- read.table("dane.csv", header = TRUE, sep = ";")
+data <- data_raw[,c("grupa","kto","ABA3")]
+data$ok <- complete.cases(data)
+data_grupy <- split(data,f = data$grupa)
+lapply(names(data_grupy), function(x) {data_grupy[[x]]$kto_lag1 <<- as.character(lag(zoo(data_grupy[[x]]$kto), -1, na.pad = T))})
+data <- data.frame(do.call(rbind,data_grupy))
+row.names(data) <- NULL
+data$para<-paste0(as.character(data$kto),as.character(data$kto_lag1))
+data<-data[data$ok,]
+data$ok<-NULL
+for(i in 1:nrow(data)){
+        data$para_sym[i]<-ifelse(data$kto[i]>data$kto_lag1[i]
+                                 ,paste0(data$kto_lag1[i],data$kto[i])
+                                 ,paste0(data$kto[i],data$kto_lag1[i])
+        )}
+data$p12 <- as.numeric(data$para == "12")
+data$p13 <- as.numeric(data$para == "13")
+data$p14 <- as.numeric(data$para == "14")
+data$p21 <- as.numeric(data$para == "21")
+data$p23 <- as.numeric(data$para == "23")
+data$p24 <- as.numeric(data$para == "24")
+data$p31 <- as.numeric(data$para == "31")
+data$p32 <- as.numeric(data$para == "32")
+data$p34 <- as.numeric(data$para == "34")
+data$p41 <- as.numeric(data$para == "41")
+data$p42 <- as.numeric(data$para == "42")
+data$p43 <- as.numeric(data$para == "43")
+
+data$ps12 <- as.numeric(data$para_sym == "12")
+data$ps13 <- as.numeric(data$para_sym == "13")
+data$ps14 <- as.numeric(data$para_sym == "14")
+data$ps23 <- as.numeric(data$para_sym == "23")
+data$ps24 <- as.numeric(data$para_sym == "24")
+data$ps34 <- as.numeric(data$para_sym == "34")
+
+data_grupy<-split(data,data$grupa)
+```
+
+##WYKRESY PAR SKIEROWANYCH
+
+```{r wykres, echo=FALSE,results='hide'}
+par(mfrow = c(2,4))
+lapply(1:length(data_grupy), function(i){
+        data_i <- data_grupy[[i]] 
+        data_i$sump12 <- cumsum(data_i$p12)
+        data_i$sump13 <- cumsum(data_i$p13)
+        data_i$sump14 <- cumsum(data_i$p14)
+        data_i$sump21 <- cumsum(data_i$p21)
+        data_i$sump23 <- cumsum(data_i$p23)
+        data_i$sump24 <- cumsum(data_i$p24)
+        data_i$sump31 <- cumsum(data_i$p31)
+        data_i$sump32 <- cumsum(data_i$p32)
+        data_i$sump34 <- cumsum(data_i$p34)
+        data_i$sump41 <- cumsum(data_i$p41)
+        data_i$sump42 <- cumsum(data_i$p42)
+        data_i$sump43 <- cumsum(data_i$p43)
+        maxY <- with(data_i, max(c(sump12,sump13,sump14,sump12,sump21,sump23,sump24,sump31,sump32,sump34,sump41,sump42,sump43)))
+        cl <- rainbow(12)
+        plot(data_i$sump12
+             ,type = "l"
+             ,ylim = c(0,maxY)
+             ,main = paste("grupa",i)
+             ,xlab = "time"
+             ,ylab = "cumulative sum"
+             ,col = cl[1])
+        lines(data_i$sump13,col = cl[2])
+        lines(data_i$sump14,col = cl[3])
+        lines(data_i$sump21,col = cl[4])
+        lines(data_i$sump23,col = cl[5])
+        lines(data_i$sump24,col = cl[6])
+        lines(data_i$sump31,col = cl[7])
+        lines(data_i$sump32,col = cl[8])
+        lines(data_i$sump34,col = cl[9])
+        lines(data_i$sump41,col = cl[10])
+        lines(data_i$sump42,col = cl[11])
+        lines(data_i$sump43,col = cl[12])
+})
+```
+
+##WYKRESY PAR SYMETRYCZNYCH
+
+```{r wykres_par_symetrycznych, echo=FALSE,results='hide'}
+par(mfrow = c(2,4))
+lapply(1:length(data_grupy), function(i){
+        data_i <- data_grupy[[i]] 
+        data_i$sump12 <- cumsum(data_i$ps12)
+        data_i$sump13 <- cumsum(data_i$ps13)
+        data_i$sump14 <- cumsum(data_i$ps14)
+        data_i$sump23 <- cumsum(data_i$ps23)
+        data_i$sump24 <- cumsum(data_i$ps24)
+        data_i$sump34 <- cumsum(data_i$ps34)
+        maxY <- with(data_i, max(c(sump12,sump13,sump14,sump12,sump23,sump24,sump34)))
+        cl <- rainbow(6)
+        plot(data_i$sump12
+             ,type = "l"
+             ,ylim = c(0,maxY)
+             ,main = paste("grupa",i)
+             ,xlab = "time"
+             ,ylab = "cumulative sum"
+             ,col = cl[1])
+        lines(data_i$sump13,col = cl[2])
+        lines(data_i$sump14,col = cl[3])
+        lines(data_i$sump23,col = cl[4])
+        lines(data_i$sump24,col = cl[5])
+        lines(data_i$sump34,col = cl[6])
+})
+```

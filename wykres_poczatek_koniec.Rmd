@@ -1,0 +1,115 @@
+```{r,echo=FALSE,results='hide'}
+library(zoo)
+data_raw <- read.table("dane.csv", header = TRUE, sep = ";")
+data <- data_raw[,c("grupa","kto","ABA3")]
+data$ok <- complete.cases(data)
+data_grupy <- split(data,f = data$grupa)
+lapply(names(data_grupy), function(x) {data_grupy[[x]]$kto_lag1 <<- as.character(lag(zoo(data_grupy[[x]]$kto), -1, na.pad = T))})
+data <- data.frame(do.call(rbind,data_grupy))
+row.names(data) <- NULL
+data$para<-paste0(as.character(data$kto),as.character(data$kto_lag1))
+data<-data[data$ok,]
+data$ok<-NULL
+for(i in 1:nrow(data)){
+        data$para_sym[i]<-ifelse(data$kto[i]>data$kto_lag1[i]
+                                 ,paste0(data$kto_lag1[i],data$kto[i])
+                                 ,paste0(data$kto[i],data$kto_lag1[i])
+        )}
+data$p12 <- as.numeric(data$para == "12")
+data$p13 <- as.numeric(data$para == "13")
+data$p14 <- as.numeric(data$para == "14")
+data$p21 <- as.numeric(data$para == "21")
+data$p23 <- as.numeric(data$para == "23")
+data$p24 <- as.numeric(data$para == "24")
+data$p31 <- as.numeric(data$para == "31")
+data$p32 <- as.numeric(data$para == "32")
+data$p34 <- as.numeric(data$para == "34")
+data$p41 <- as.numeric(data$para == "41")
+data$p42 <- as.numeric(data$para == "42")
+data$p43 <- as.numeric(data$para == "43")
+
+data$ps12 <- as.numeric(data$para_sym == "12")
+data$ps13 <- as.numeric(data$para_sym == "13")
+data$ps14 <- as.numeric(data$para_sym == "14")
+data$ps23 <- as.numeric(data$para_sym == "23")
+data$ps24 <- as.numeric(data$para_sym == "24")
+data$ps34 <- as.numeric(data$para_sym == "34")
+
+data$n <- as.numeric(ave(row.names(data), data$grupa, FUN=seq_along))
+data$ok <- FALSE
+data$poczatek <- FALSE
+
+lapply(1:16,function(x) {
+        nmax<-nrow(data[data$grupa==x,])
+        data[data$grupa==x & data$n<51, ]$poczatek <<- TRUE
+        data[data$grupa==x & (data$n<51 | data$n>(nmax-51)),]$ok <<-TRUE
+        })
+data <- data[data$ok,]
+
+data$grupa<- 2 * as.numeric(data$grupa) - 1 + abs(as.numeric(data$poczatek)-1)
+
+data$sump12 <- with(data, ave(p12,grupa,FUN=cumsum))
+data$sump13 <- with(data, ave(p13,grupa,FUN=cumsum))
+data$sump14 <- with(data, ave(p14,grupa,FUN=cumsum))
+data$sump21 <- with(data, ave(p21,grupa,FUN=cumsum))
+data$sump23 <- with(data, ave(p23,grupa,FUN=cumsum))
+data$sump24 <- with(data, ave(p24,grupa,FUN=cumsum))
+data$sump31 <- with(data, ave(p31,grupa,FUN=cumsum))
+data$sump32 <- with(data, ave(p32,grupa,FUN=cumsum))
+data$sump34 <- with(data, ave(p34,grupa,FUN=cumsum))
+data$sump41 <- with(data, ave(p41,grupa,FUN=cumsum))
+data$sump42 <- with(data, ave(p42,grupa,FUN=cumsum))
+data$sump43 <- with(data, ave(p43,grupa,FUN=cumsum))
+
+data$sumps12 <- with(data, ave(ps12,grupa,FUN=cumsum))
+data$sumps13 <- with(data, ave(ps13,grupa,FUN=cumsum))
+data$sumps14 <- with(data, ave(ps14,grupa,FUN=cumsum))
+data$sumps23 <- with(data, ave(ps23,grupa,FUN=cumsum))
+data$sumps24 <- with(data, ave(ps24,grupa,FUN=cumsum))
+data$sumps34 <- with(data, ave(ps34,grupa,FUN=cumsum))
+
+```
+
+```{r echo=FALSE,results='hide'}
+max_by_group <- lapply(1:32, function(x) apply(data[data$grupa==x,28:45],MARGIN = 2,FUN = max))
+data1 <- as.data.frame(do.call(rbind,max_by_group))
+labels <- colnames(data1)[13:18]
+
+```
+##WYKRESY
+
+Na wykresach przedstawione są częstości wypowiadania się poszczególnych par w pierwszych 50 turach (początek) i w ostatnich 50 turach (koniec). Konkretne pary oznaczone są za kżdym razem tym samym kolorem. W pierwszej sekcji przedstawione zostały pary symetryczne a w drugiej asymetryczne (skierowane)
+
+###PARY SYMETRYCZNIE
+
+```{r echo=FALSE, results='hide'}
+par(mfrow = c(2,2))
+kolory <- rainbow(6)
+lapply(1:32,function(x) {
+        if (x%%2 == 1) title<-"początek" else title<-"koniec"
+        title<-paste0("grupa ",(x+1)%/%2,"\n",title)
+        slupki <- as.numeric(data1[x,13:18])
+        dane<-data.frame(slupki,kolory)
+        dane<-dane[order(dane$slupki),]
+        slupki <- as.numeric(dane$slupki)
+        cl<-as.character(dane$kolory)
+        barplot(height =slupki,col=cl,main=title)
+        })
+```
+
+###PARY ASYMETRYCZNIE
+
+```{r echo=FALSE, results='hide'}
+par(mfrow = c(2,2))
+kolory <- rainbow(12)
+lapply(1:32,function(x) {
+        if (x%%2 == 1) title<-"początek" else title<-"koniec"
+        title<-paste0("grupa ",(x+1)%/%2,"\n",title)
+        slupki <- as.numeric(data1[x,1:12])
+        dane<-data.frame(slupki,kolory)
+        dane<-dane[order(dane$slupki),]
+        slupki <- as.numeric(dane$slupki)
+        cl<-as.character(dane$kolory)
+        barplot(height =slupki,col=cl,main=title)
+        })
+```

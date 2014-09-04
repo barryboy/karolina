@@ -15,9 +15,22 @@ Dodaję kolumnę do filtrowania braków danych:
 ```{r}
 data$ok <- complete.cases(data)
 ```
+Dodaję wektory wystąpień poszczególnych osób:
+```{r}
+data$o1 <- as.numeric(data$kto == 1)
+data$o2 <- as.numeric(data$kto == 2)
+data$o3 <- as.numeric(data$kto == 3)
+data$o4 <- as.numeric(data$kto == 4)
+```
 Dzielę dane na grupy:
 ```{r}
 data_grupy <- split(data,f = data$grupa)
+```
+
+Dzielę dane na ciagi a nastepnie na grupy
+
+```{r}
+
 ```
 ##Wstępny opis danych
 
@@ -76,9 +89,9 @@ lapply(1:nrow(aggr1), function(i){
 ###Skumulowane przebiegi czasowe
 Do Danych dla każdej grupy dołaczam kolumny z kumulatywnymi sumami ABA i ABC. Dane przdstawiam na wykresie: 
 
-```{r}
+```{r results='hide'}
 par(mfrow = c(2,4))
-o <- lapply(1:length(data_grupy), function(i){
+lapply(1:length(data_grupy), function(i){
     data_i <- data_grupy[[i]][data_grupy[[i]]$ok,] 
     data_i$cumABA <- cumsum(data_i$ABA3)
     data_i$cumABC <- cumsum(abs(data_i$ABA3-1))
@@ -99,3 +112,4 @@ o <- lapply(1:length(data_grupy), function(i){
            ,legend = c("ABA", "ABC"))
 })
 ```
+
